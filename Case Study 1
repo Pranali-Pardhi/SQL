@@ -1,1 +1,152 @@
+-- << Case Study Solutions >> --
 
+USE Tiny_Shop_sales;
+
+SELECT * FROM customers;
+SELECT * FROM products;
+SELECT * FROM orders;
+SELECT * FROM order_items;
+
+-- 1) Which product has the highest price? Only return a single row.
+
+SELECT 
+    product_name, price
+FROM
+    products
+WHERE
+    price IN (SELECT 
+            MAX(price)
+        FROM
+            products);
+SELECT 
+    product_name, price
+FROM
+    products
+ORDER BY price DESC
+LIMIT 1;
+
+-- 2) Which customer has made the most orders?
+
+SELECT 
+    cust.customer_id,
+    cust.first_name,
+    cust.last_name,
+    COUNT(ord.order_id) AS order_count
+FROM
+    customers cust
+        JOIN
+    orders ord ON cust.customer_id = ord.customer_id
+GROUP BY cust.customer_id , cust.first_name , cust.last_name
+ORDER BY order_count DESC
+LIMIT 1;
+
+-- 3) What’s the total revenue per product?
+
+SELECT 
+    pr.product_name,
+    SUM(pr.price * oi.quantity) AS total_revenue
+FROM
+    products pr
+        JOIN
+    order_items oi ON pr.product_id = oi.product_id
+GROUP BY pr.product_name;
+
+-- 4) Find the day with the highest revenue.
+ SELECT 
+    ord.order_date,
+    SUM(pro.price * items.quantity) total_revenue
+FROM
+    products pro
+        JOIN
+    order_items items ON pro.product_id = items.product_id
+        JOIN
+    orders ord ON items.order_id = ord.order_id
+GROUP BY ord.order_date
+ORDER BY total_revenue DESC
+LIMIT 1;
+
+-- 5) Find the first order (by date) for each customer.
+
+SELECT 
+    c.customer_id,
+    c.first_name,
+    c.last_name,
+    MIN(o.order_date) AS first_order_date
+FROM
+    customers c
+        JOIN
+    orders o ON c.customer_id = o.customer_id
+GROUP BY customer_id , c.first_name , c.last_name;
+
+-- -- solution given on website #DEV for question 5:
+-- SELECT  
+-- 	cus.customer_id,
+--   cus.first_name, 
+--   cus.last_name, 
+--   min(ord.order_date) first_order
+-- FROM customers cus
+-- JOIN orders ord ON cus.customer_id = ord.customer_id
+-- GROUP  BY cus.customer_id, cus.first_name, cus.last_name, ord.order_date
+-- ORDER BY first_order;
+
+SELECT 
+    cust.first_name,
+    cust.last_name,
+    COUNT(DISTINCT product_name) unique_products
+FROM
+    customers cust
+        JOIN
+    orders ord ON cust.customer_id = ord.customer_id
+        JOIN
+    order_items items ON ord.order_id = items.order_id
+        JOIN
+    products prod ON items.product_id = prod.product_id
+GROUP BY cust.first_name , cust.last_name
+ORDER BY unique_products DESC
+LIMIT 3
+
+-- 7) Which product has been bought the least in terms of quantity?
+
+SELECT 
+    p.product_name, SUM(o.quantity) AS total_quantity
+FROM
+    products p
+        JOIN
+    order_items o ON p.product_id = o.product_id
+GROUP BY p.product_name
+ORDER BY total_quantity
+LIMIT 1
+
+-- 8) For each order, determine if it was ‘Expensive’ (total over 300), ‘Affordable’ (total over 100), or ‘Cheap’.
+
+SELECT 
+    order_id,
+    total_revenue,
+    CASE
+        WHEN total_revenue > 300 THEN 'Expensive Order'
+        WHEN total_revenue > 100 THEN 'AFFORDABLE Order'
+        ELSE 'CHEAP'
+    END AS Order_
+FROM
+    (SELECT 
+        oi.order_id, SUM(pr.price * oi.quantity) AS total_revenue
+    FROM
+        products pr
+    LEFT JOIN order_items oi ON pr.product_id = oi.product_id
+    GROUP BY oi.order_id) AS temp2ind customers who have ordered the product with the highest price.
+
+-- 9) Find customers who have ordered the product with the highest price.
+
+SELECT 
+    c.customer_id, c.first_name , c.last_name
+FROM
+    customers c
+		JOIN
+    orders o ON c.customer_id = o.customer_id
+        JOIN
+    order_items oi ON o.order_id = oi.order_id
+        JOIN
+    products p ON oi.product_id = p.product_id
+	WHERE p.price = (SELECT MAX(price) FROM products)
+    GROUP BY c.customer_id, c.first_name;
+    
